@@ -44,8 +44,12 @@ void CMainFrame::InitMenu() {
 		{ ID_OBJECTLIST_SHOWDIRECTORIESINLIST, IDI_DIRECTORY },
 		{ ID_OBJECTLIST_LISTMODE, IDI_LIST },
 		{ ID_OBJECTS_ALLHANDLES, IDI_MAGNET },
+		{ ID_OBJECTS_ALLOBJECTS, IDI_OBJECTS },
 		{ ID_SYSTEM_ZOMBIEPROCESSES, IDI_PROCESS_ZOMBIE },
 		{ ID_OBJECTS_HANDLESINPROCESS, IDI_MAGNET2 },
+		{ ID_TYPESLIST_ALLHANDLES, IDI_MAGNET2 },
+		{ ID_TYPESLIST_ALLOBJECTS, IDI_OBJECTS },
+		{ ID_HANDLELIST_CLOSE, IDI_DELETE },
 	};
 
 	for (auto& cmd : commands) {
@@ -91,6 +95,7 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 		{ ID_OBJECTS_OBJECTTYPES, IDI_TYPES },
 		{ ID_OBJECTS_OBJECTMANAGERNAMESPACE, IDI_PACKAGE },
 		{ ID_OBJECTS_ALLHANDLES, IDI_MAGNET, BTNS_BUTTON, L"All Handles" },
+		{ ID_OBJECTS_ALLOBJECTS, IDI_OBJECTS, BTNS_BUTTON, L"All Objects" },
 		{ ID_OBJECTS_HANDLESINPROCESS, IDI_MAGNET2, BTNS_BUTTON, L"Process Handles" },
 	};
 	CreateSimpleReBar(ATL_SIMPLE_REBAR_NOBORDER_STYLE);
@@ -101,7 +106,7 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	m_view.m_bTabCloseButton = FALSE;
 	m_hWndClient = m_view.Create(m_hWnd, rcDefault, nullptr, 
 		WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_WINDOWEDGE);
-	ViewFactory::InitIcons(m_view);
+	ViewFactory::Get().Init(this, m_view);
 
 	UISetCheck(ID_VIEW_STATUS_BAR, 1);
 
@@ -154,12 +159,12 @@ LRESULT CMainFrame::OnFileExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 }
 
 LRESULT CMainFrame::OnObjectTypes(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	auto view = ViewFactory::CreateView(this, m_view, ViewType::ObjectTypes);
+	auto view = ViewFactory::Get().CreateView(ViewType::ObjectTypes);
 	return 0;
 }
 
 LRESULT CMainFrame::OnObjectManager(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	auto view = ViewFactory::CreateView(this, m_view, ViewType::ObjectManager);
+	auto view = ViewFactory::Get().CreateView(ViewType::ObjectManager);
 	return 0;
 }
 
@@ -252,14 +257,19 @@ void CMainFrame::SetStatusText(int index, PCWSTR text) {
 }
 
 LRESULT CMainFrame::OnAllHandles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	ViewFactory::CreateView(this, m_view, ViewType::AllHandles);
+	ViewFactory::Get().CreateView(ViewType::AllHandles);
+	return 0;
+}
+
+LRESULT CMainFrame::OnAllObjects(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	ViewFactory::Get().CreateView(ViewType::Objects);
 	return 0;
 }
 
 LRESULT CMainFrame::OnHandlesInProcess(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	CProcessSelectorDlg dlg;
 	if (dlg.DoModal() == IDOK) {
-		ViewFactory::CreateView(this, m_view, ViewType::ProcessHandles, dlg.GetSelectedProcess());
+		ViewFactory::Get().CreateView(ViewType::ProcessHandles, dlg.GetSelectedProcess());
 	}
 	return 0;
 }
