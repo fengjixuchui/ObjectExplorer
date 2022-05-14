@@ -17,6 +17,20 @@ CString ProcessHelper::GetProcessName(DWORD pid) {
 	return L"<Unknown>";
 }
 
+CString ProcessHelper::GetProcessName2(DWORD pid) {
+	wil::unique_handle hProcess(::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid));
+	if (hProcess) {
+		WCHAR name[MAX_PATH];
+		if (::GetProcessImageFileName(hProcess.get(), name, _countof(name))) {
+			return wcsrchr(name, L'\\') + 1;
+		}
+	}
+	EnumProcesses();
+	if (auto it = s_names.find(pid); it != s_names.end())
+		return it->second;
+	return L"<Unknown>";
+}
+
 std::wstring ProcessHelper::GetUserName(DWORD pid) {
 	if (pid <= 4)
 		return L"NT AUTHORITY\\System";
@@ -65,4 +79,33 @@ void ProcessHelper::EnumProcesses(bool force) {
 
 		s_names.insert({ pe.th32ProcessID, pe.szExeFile });
 	}
+}
+
+std::wstring ProcessHelper::GetDosNameFromNtName(PCWSTR name) {
+	static std::vector<std::pair<std::wstring, std::wstring>> deviceNames;
+	static bool first = true;
+	if (first) {
+		auto drives = ::GetLogicalDrives();
+		int drive = 0;
+		while (drives) {
+			if (drives & 1) {
+				// drive exists
+				WCHAR driveName[] = L"X:";
+				driveName[0] = (WCHAR)(drive + 'A');
+				WCHAR path[MAX_PATH];
+				if (::QueryDosDevice(driveName, path, MAX_PATH)) {
+					deviceNames.push_back({ path, driveName });
+				}
+			}
+			drive++;
+			drives >>= 1;
+		}
+		first = false;
+	}
+
+	for (auto& [ntName, dosName] : deviceNames) {
+		if (::_wcsnicmp(name, ntName.c_str(), ntName.size()) == 0)
+			return dosName + (name + ntName.size());
+	}
+	return L"";
 }

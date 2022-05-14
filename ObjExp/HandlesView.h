@@ -15,7 +15,6 @@ class CHandlesView :
 public:
 	explicit CHandlesView(IMainFrame* frame, DWORD pid = 0, PCWSTR type = nullptr);
 
-	void OnFinalMessage(HWND /*hWnd*/) override;
 	CString GetTitle() const override;
 	void Refresh();
 	void DoSort(SortInfo const* si);
@@ -27,6 +26,7 @@ public:
 	void OnStateChanged(HWND, int from, int to, UINT oldState, UINT newState);
 	void OnPageActivated(bool active);
 	void DoTimerUpdate();
+	int GetSaveColumnRange(int& start) const;
 
 	DWORD OnPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/);
 	DWORD OnItemPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/);

@@ -16,10 +16,6 @@ CHandlesView::CHandlesView(IMainFrame* frame, DWORD pid, PCWSTR type)
 		m_hProcess.reset(::OpenProcess(SYNCHRONIZE, FALSE, pid));
 }
 
-void CHandlesView::OnFinalMessage(HWND) {
-	delete this;
-}
-
 CString CHandlesView::GetTitle() const {
 	if (m_Pid == 0 && m_TypeName.IsEmpty())
 		return L"All Handles";
@@ -248,6 +244,10 @@ void CHandlesView::DoTimerUpdate() {
 	ATLVERIFY(::TrySubmitThreadpoolCallback([](auto, auto param) {
 		return ((CHandlesView*)param)->DoTimerWorkAsync();
 		}, this, nullptr));
+}
+
+int CHandlesView::GetSaveColumnRange(int& start) const {
+	return 3;
 }
 
 DWORD CHandlesView::OnPrePaint(int, LPNMCUSTOMDRAW) {
