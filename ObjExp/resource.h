@@ -73,6 +73,7 @@
 #define IDI_PROCESS_ZOMBIE              274
 #define IDI_MAGNET2                     275
 #define IDD_PROCESSCHOOSER              276
+#define IDI_THREAD_ZOMBIE               278
 #define IDC_TYPE                        1000
 #define IDC_NAME                        1001
 #define IDC_HANDLES                     1002
@@ -89,9 +90,11 @@
 #define IDC_LABEL                       1012
 #define IDC_LABEL2                      1013
 #define IDC_LABEL3                      1014
+#define IDC_LABEL4                      1015
 #define IDC_VALUE                       1017
 #define IDC_VALUE2                      1018
 #define IDC_VALUE3                      1019
+#define IDC_VALUE4                      1020
 #define IDC_FRAME                       1022
 #define IDC_TEXT                        1023
 #define IDC_LIST                        1024
@@ -137,13 +140,14 @@
 #define ID_SYSTEM_THREADS               32815
 #define ID_SYSTEM_SYSTEMINFORMATION     32816
 #define ID_HANDLELIST_CLOSE             32817
+#define ID_SYSTEM_ZOMBIETHREADS         32818
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        278
-#define _APS_NEXT_COMMAND_VALUE         32818
+#define _APS_NEXT_RESOURCE_VALUE        279
+#define _APS_NEXT_COMMAND_VALUE         32819
 #define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
