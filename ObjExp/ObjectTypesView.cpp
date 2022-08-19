@@ -11,6 +11,7 @@
 #include "ClipboardHelper.h"
 #include "ObjectHelpers.h"
 #include "ViewFactory.h"
+#include "AccessMaskDecoder.h"
 
 BOOL CObjectTypesView::PreTranslateMessage(MSG* pMsg) {
 	pMsg;
@@ -36,19 +37,19 @@ CString CObjectTypesView::GetColumnText(HWND, int row, int col) const {
 		case ColumnType::ValidAccess: return std::format(L"0x{:08X}", item->ValidAccessMask).c_str();
 		case ColumnType::Pool: return StringHelper::PoolTypeToString(item->PoolType);
 		case ColumnType::GenericRead:
-			text.Format(L"0x%08X", item->GenericMapping.GenericRead);
+			text.Format(L"0x%08X (%s)", item->GenericMapping.GenericRead, (PCWSTR)AccessMaskDecoder::DecodeAccessMask(item->TypeName, item->GenericMapping.GenericRead));
 			break;
 		case ColumnType::GenericWrite:
-			text.Format(L"0x%08X", item->GenericMapping.GenericWrite);
+			text.Format(L"0x%08X (%s)", item->GenericMapping.GenericWrite, (PCWSTR)AccessMaskDecoder::DecodeAccessMask(item->TypeName, item->GenericMapping.GenericWrite));
 			break;
 		case ColumnType::GenericExecute:
-			text.Format(L"0x%08X", item->GenericMapping.GenericExecute);
+			text.Format(L"0x%08X (%s)", item->GenericMapping.GenericExecute, (PCWSTR)AccessMaskDecoder::DecodeAccessMask(item->TypeName, item->GenericMapping.GenericExecute));
 			break;
 		case ColumnType::GenericAll:
-			text.Format(L"0x%08X", item->GenericMapping.GenericAll);
+			text.Format(L"0x%08X (%s)", item->GenericMapping.GenericAll, (PCWSTR)AccessMaskDecoder::DecodeAccessMask(item->TypeName, item->GenericMapping.GenericAll));
 			break;
 		case ColumnType::InvalidAttributes:
-			text.Format(L"0x%04X", item->InvalidAttributes);
+			text.Format(L"0x%08X (%s)", item->InvalidAttributes, (PCWSTR)StringHelper::ObjectAttributesToString(item->InvalidAttributes));
 			break;
 	}
 	return text;
@@ -72,11 +73,11 @@ LRESULT CObjectTypesView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 	cm->AddColumn(L"Default Paged Charge", LVCFMT_RIGHT, 130, ColumnType::DefaultPaged, ColumnFlags::Visible | ColumnFlags::Numeric);
 	cm->AddColumn(L"Default NP Charge", LVCFMT_RIGHT, 130, ColumnType::DefaultNonPaged, ColumnFlags::Visible | ColumnFlags::Numeric);
 	cm->AddColumn(L"Valid Access Mask", LVCFMT_RIGHT, 110, ColumnType::ValidAccess, ColumnFlags::Visible | ColumnFlags::Numeric);
-	cm->AddColumn(L"Generic Read", LVCFMT_RIGHT, 110, ColumnType::GenericRead);
-	cm->AddColumn(L"Generic Write", LVCFMT_RIGHT, 110, ColumnType::GenericWrite);
-	cm->AddColumn(L"Generic Execute", LVCFMT_RIGHT, 110, ColumnType::GenericExecute);
-	cm->AddColumn(L"Generic All", LVCFMT_RIGHT, 110, ColumnType::GenericAll);
-	//cm->AddColumn(L"Invalid Attr", LVCFMT_RIGHT, 90, ColumnType::InvalidAttributes);
+	cm->AddColumn(L"Generic Read", LVCFMT_LEFT, 210, ColumnType::GenericRead);
+	cm->AddColumn(L"Generic Write", LVCFMT_LEFT, 210, ColumnType::GenericWrite);
+	cm->AddColumn(L"Generic Execute", LVCFMT_LEFT, 210, ColumnType::GenericExecute);
+	cm->AddColumn(L"Generic All", LVCFMT_LEFT, 210, ColumnType::GenericAll);
+	cm->AddColumn(L"Invalid Attributes", LVCFMT_LEFT, 180, ColumnType::InvalidAttributes);
 
 	cm->UpdateColumns();
 
@@ -107,7 +108,6 @@ void CObjectTypesView::OnPageActivated(bool activate) {
 		GetFrame()->SetStatusText(7, text);
 	}
 }
-
 
 LRESULT CObjectTypesView::OnEditCopy(WORD, WORD, HWND, BOOL&) const {
 	auto text = ListViewHelper::GetSelectedRowsAsString(m_List, L",");
@@ -160,6 +160,7 @@ void CObjectTypesView::DoSort(SortInfo const* si) {
 			case ColumnType::GenericWrite: return SortHelper::Sort(item1->GenericMapping.GenericWrite, item2->GenericMapping.GenericWrite, asc);
 			case ColumnType::GenericExecute: return SortHelper::Sort(item1->GenericMapping.GenericExecute, item2->GenericMapping.GenericExecute, asc);
 			case ColumnType::GenericAll: return SortHelper::Sort(item1->GenericMapping.GenericAll, item2->GenericMapping.GenericAll, asc);
+			case ColumnType::InvalidAttributes: return SortHelper::Sort(item1->InvalidAttributes, item2->InvalidAttributes, asc);
 		}
 		return false;
 	};
