@@ -1,12 +1,13 @@
 #include "pch.h"
-#include "GenericObjectProperties.h"
-#include "NtDll.h"
+#include "GenericPage.h"
 #include "SecurityInfo.h"
 #include "DriverHelper.h"
 #include "ObjectHelpers.h"
 #include "ObjectManager.h"
+#include "NtDll.h"
+#include <ThemeHelper.h>
 
-LRESULT CGenericPropertiesPage::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&) {
+LRESULT CGenericPage::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&) {
 	ATLASSERT(!m_TypeName.IsEmpty());
 	InitDynamicLayout(false, false);
 	AddIconToButton(IDC_SECURITY, IDI_SHIELD2);
@@ -70,12 +71,15 @@ LRESULT CGenericPropertiesPage::OnInitDialog(UINT, WPARAM, LPARAM, BOOL&) {
 	return 0;
 }
 
-LRESULT CGenericPropertiesPage::OnDialogColor(UINT, WPARAM, LPARAM, BOOL&) {
+LRESULT CGenericPage::OnDialogColor(UINT, WPARAM, LPARAM, BOOL&) {
 	return (LRESULT)::GetSysColorBrush(COLOR_WINDOW);
 }
 
-LRESULT CGenericPropertiesPage::OnEditSecurity(WORD, WORD, HWND, BOOL&) {
+LRESULT CGenericPage::OnEditSecurity(WORD, WORD, HWND, BOOL&) {
 	SecurityInfo si(m_hObject, m_Name);
+	ThemeHelper::Suspend();
 	::EditSecurity(m_hWnd, &si);
+	ThemeHelper::Resume();
+
 	return 0;
 }

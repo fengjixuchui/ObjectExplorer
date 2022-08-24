@@ -72,7 +72,7 @@
     <ClCompile Include="SecurityInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GenericObjectProperties.cpp">
+    <ClCompile Include="GenericPage.cpp">
       <Filter>Dialogs</Filter>
     </ClCompile>
     <ClCompile Include="ObjectPropertiesDlg.cpp">
@@ -98,6 +98,12 @@
     </ClCompile>
     <ClCompile Include="ImageIconCache.cpp">
       <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="HandlesPage.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="AppSettings.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -149,7 +155,7 @@
     <ClInclude Include="AboutDlg.h">
       <Filter>Dialogs</Filter>
     </ClInclude>
-    <ClInclude Include="GenericObjectProperties.h">
+    <ClInclude Include="GenericPage.h">
       <Filter>Dialogs</Filter>
     </ClInclude>
     <ClInclude Include="ObjectHelpers.h">
@@ -187,6 +193,12 @@
     </ClInclude>
     <ClInclude Include="ImageIconCache.h">
       <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="HandlesPage.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="AppSettings.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -391,6 +403,9 @@
       <Filter>Resource Files\Icons</Filter>
     </Image>
     <Image Include="res\threads-zombie.ico">
+      <Filter>Resource Files\Icons</Filter>
+    </Image>
+    <Image Include="res\Info.ico">
       <Filter>Resource Files\Icons</Filter>
     </Image>
   </ItemGroup>
