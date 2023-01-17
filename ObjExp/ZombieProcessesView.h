@@ -14,12 +14,12 @@ public:
 	void DoSort(SortInfo const* si);
 	CString GetColumnText(HWND, int row, int col) const;
 	int GetRowImage(HWND, int row, int col) const;
-	int GetSaveColumnRange(int& start) const;
+	int GetSaveColumnRange(HWND, int& start) const;
 	bool IsSortable(HWND, int col) const;
 	void OnStateChanged(HWND, int from, int to, UINT oldState, UINT newState);
 	bool OnDoubleClickList(HWND, int row, int col, CPoint const&);
 
-	void UpdateUI(bool active = true);
+	void UpdateUI(bool force = false);
 
 	BEGIN_MSG_MAP(CZombieProcessesView)
 		COMMAND_ID_HANDLER(ID_VIEW_REFRESH, OnRefresh)

@@ -26,7 +26,7 @@ public:
 	void OnStateChanged(HWND, int from, int to, UINT oldState, UINT newState);
 	void OnPageActivated(bool active);
 	void DoTimerUpdate();
-	int GetSaveColumnRange(int& start) const;
+	int GetSaveColumnRange(HWND, int& start) const;
 
 	DWORD OnPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/);
 	DWORD OnItemPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/);
@@ -89,5 +89,5 @@ private:
 	CString m_TypeName;
 	wil::unique_handle m_hProcess;
 	std::atomic<bool> m_UpdateInProgress{ false };
-	bool m_UpdateProcNames{ false }, m_UpdateObjectNames{ false };
+	bool m_UpdateProcNames : 1{ false }, m_UpdateObjectNames : 1{ false };
 };

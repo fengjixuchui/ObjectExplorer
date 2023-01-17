@@ -8,6 +8,9 @@
 #include "StringHelper.h"
 #include "HandlesPage.h"
 #include "ObjectManager.h"
+#include "StructurePage.h"
+#include "SymbolManager.h"
+#include "DriverHelper.h"
 
 UINT ObjectHelpers::ShowObjectProperties(HANDLE hObject, PCWSTR typeName, PCWSTR name, PCWSTR target, DWORD handleCount) {
 	CString title = typeName;
@@ -23,6 +26,15 @@ UINT ObjectHelpers::ShowObjectProperties(HANDLE hObject, PCWSTR typeName, PCWSTR
 		CWaitCursor wait;	// handle count may be large
 		page2.Create(::GetActiveWindow());
 		dlg.AddPage(L"Handles", page2);
+	}
+	CStructPage page3(hObject);
+	if(auto it = KernelTypes.find(typeName); it != KernelTypes.end()) {
+		auto sym = SymbolManager::Get().GetSymbol(it->second);
+		if (sym) {
+			page3.SetSymbol(std::move(sym), DriverHelper::GetObjectAddress(hObject));
+			page3.Create(::GetActiveWindow());
+			dlg.AddPage(L"Object", page3);
+		}
 	}
 	dlg.DoModal();
 
@@ -113,8 +125,8 @@ std::vector<std::pair<CString, CString>> ObjectHelpers::GetSimpleProps(HANDLE hO
 		FILETIME create, exit, kernel, user;
 		if (::GetProcessTimes(hObject, &create, &exit, &kernel, &user)) {
 			props.push_back({ L"Started: ", CTime(create).Format(L"%c") });
-			auto total = 10000 * (*(ULONGLONG*)&kernel + *(ULONGLONG*)&user);	// msec
-			auto seconds = CTimeSpan(total * 1000).Format(L"%H:%M:%S");
+			auto total = (*(ULONGLONG*)&kernel + *(ULONGLONG*)&user) / 10000;	// msec
+			auto seconds = CTimeSpan(total / 1000).Format(L"%H:%M:%S");
 			props.push_back({ L"CPU Time: ", std::format(L"{}.{}", (PCWSTR)seconds, total % 1000).c_str() });
 			if (::WaitForSingleObject(hObject, 0) == WAIT_OBJECT_0) {
 				//
@@ -131,15 +143,26 @@ std::vector<std::pair<CString, CString>> ObjectHelpers::GetSimpleProps(HANDLE hO
 		FILETIME create, exit, kernel, user;
 		if (::GetThreadTimes(hObject, &create, &exit, &kernel, &user)) {
 			props.push_back({ L"Started: ", CTime(create).Format(L"%c") });
-			auto total = 10000 * (*(ULONGLONG*)&kernel + *(ULONGLONG*)&user);	// msec
-			auto seconds = CTimeSpan(total * 1000).Format(L"%H:%M:%S");
-			props.push_back({ L"CPU Time: ", std::format(L"{}.{}", (PCWSTR)seconds, total % 1000).c_str() });
+			auto total = (*(ULONGLONG*)&kernel + *(ULONGLONG*)&user) / 10000;	// msec
+			auto seconds = CTimeSpan(total / 1000).Format(L"%H:%M:%S");
+			props.push_back({ L"CPU Time: ", std::format(L"{}.{:03}", (PCWSTR)seconds, total % 1000).c_str() });
 			if (::WaitForSingleObject(hObject, 0) == WAIT_OBJECT_0) {
 				//
 				// thread dead
 				//
 				props.push_back({ L"Exited: ", CTime(exit).Format(L"%c") });
 			}
+		}
+	}
+	else if (::_wcsicmp(type, L"Job") == 0) {
+		JOBOBJECT_BASIC_ACCOUNTING_INFORMATION info;
+		if (::QueryInformationJobObject(hObject, JobObjectBasicAccountingInformation, &info, sizeof(info), nullptr)) {
+			props.push_back({ L"Active Processes: ", std::to_wstring(info.ActiveProcesses).c_str() });
+			props.push_back({ L"Total Processes: ", std::to_wstring(info.TotalProcesses).c_str() });
+			auto total = (info.TotalUserTime.QuadPart + info.TotalKernelTime.QuadPart) / 10000;
+			auto seconds = CTimeSpan(total / 1000).Format(L"%H:%M:%S");
+			props.push_back({ L"CPU Time: ", std::format(L"{}.{:03}", (PCWSTR)seconds, total % 1000).c_str() });
+			props.push_back({ L"Page Faults: ", std::to_wstring(info.TotalPageFaultCount).c_str() });
 		}
 	}
 
@@ -156,3 +179,39 @@ bool ObjectHelpers::IsNamedObjectType(USHORT index) {
 	return std::find(std::begin(nonNamed), std::end(nonNamed), type) == std::end(nonNamed);
 }
 
+HANDLE ObjectHelpers::OpenObject(PCWSTR name, PCWSTR typeName, DWORD access) {
+	HANDLE hObject = nullptr;
+	CString type(typeName);
+	OBJECT_ATTRIBUTES attr;
+	UNICODE_STRING uname;
+	RtlInitUnicodeString(&uname, name);
+	InitializeObjectAttributes(&attr, &uname, 0, nullptr, nullptr);
+	auto status = STATUS_UNSUCCESSFUL;
+
+	if (type == L"Event")
+		status = NT::NtOpenEvent(&hObject, access, &attr);
+	else if (type == L"Mutant")
+		status = NT::NtOpenMutant(&hObject, access, &attr);
+	else if (type == L"Section")
+		status = NT::NtOpenSection(&hObject, access, &attr);
+	else if (type == L"Session")
+		status = NT::NtOpenSession(&hObject, access, &attr);
+	else if (type == L"Semaphore")
+		status = NT::NtOpenSemaphore(&hObject, access, &attr);
+	else if (type == "EventPair")
+		status = NT::NtOpenEventPair(&hObject, access, &attr);
+	else if (type == L"IoCompletion")
+		status = NT::NtOpenIoCompletion(&hObject, access, &attr);
+	else if (type == L"SymbolicLink")
+		status = NT::NtOpenSymbolicLinkObject(&hObject, access, &attr);
+	else if (type == L"Key")
+		status = NT::NtOpenKey(&hObject, access, &attr);
+	else if (type == L"Job")
+		status = NT::NtOpenJobObject(&hObject, access, &attr);
+	else if (type == L"File" || type == L"Device") {
+		IO_STATUS_BLOCK ioStatus;
+		status = NT::NtOpenFile(&hObject, access, &attr, &ioStatus, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0);
+	}
+
+	return hObject;
+}

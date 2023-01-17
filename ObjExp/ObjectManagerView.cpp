@@ -177,6 +177,7 @@ LRESULT CObjectManagerView::OnCreate(UINT, WPARAM, LPARAM, BOOL&) {
 	m_hWndClient = m_Splitter.Create(m_hWnd, rcDefault, nullptr, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, WS_EX_CLIENTEDGE);
 	m_List.Create(m_Splitter, rcDefault, nullptr, WS_CHILD | WS_VISIBLE |
 		WS_CLIPSIBLINGS | LVS_REPORT | LVS_OWNERDATA | LVS_SHAREIMAGELISTS | LVS_SHOWSELALWAYS);
+	m_List.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_INFOTIP);
 	m_Tree.Create(m_Splitter, rcDefault, nullptr, WS_CHILD | WS_VISIBLE |
 		WS_CLIPSIBLINGS | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_HASLINES | TVS_SHOWSELALWAYS);
 	m_List.SetImageList(ResourceManager::Get().GetTypesImageList(), LVSIL_SMALL);
@@ -187,7 +188,6 @@ LRESULT CObjectManagerView::OnCreate(UINT, WPARAM, LPARAM, BOOL&) {
 	images.AddIcon(AtlLoadIconImage(IDI_FOLDER_CLOSED, 0, 16, 16));
 	m_Tree.SetImageList(images, TVSIL_NORMAL);
 
-	m_List.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_INFOTIP);
 	m_List.InsertColumn(0, L"Name", LVCFMT_LEFT, 400);
 	m_List.InsertColumn(1, L"Type", LVCFMT_LEFT, 150);
 	m_List.InsertColumn(2, L"Symbolic Link Target", LVCFMT_LEFT, 600);
@@ -283,7 +283,7 @@ void CObjectManagerView::UpdateList(bool newNode) {
 			path = L"\\";
 		m_Objects.clear();
 		m_Objects.reserve(128);
-		for (auto& item : ObjectManager::EnumDirectoryObjects(path)) {
+		for (auto const& item : ObjectManager::EnumDirectoryObjects(path)) {
 			if (m_ShowDirectories || item.TypeName != L"Directory") {
 				ObjectData data;
 				data.Name = item.Name.c_str();
@@ -453,9 +453,11 @@ void CObjectManagerView::ApplyFilter() {
 	UpdateStatusText();
 }
 void CObjectManagerView::UpdateStatusText() {
-	CString text;
-	text.Format(L"Items: %u\n", (ULONG)m_Objects.size());
-	GetFrame()->SetStatusText(7, text);
+	if (IsActive()) {
+		CString text;
+		text.Format(L"Items: %u\n", (ULONG)m_Objects.size());
+		GetFrame()->SetStatusText(7, text);
+	}
 }
 
 LRESULT CObjectManagerView::OnQuickFind(WORD, WORD, HWND, BOOL&) {
@@ -497,3 +499,4 @@ LRESULT CObjectManagerView::OnSwitchToListMode(WORD, WORD, HWND, BOOL&) {
 	}
 	return 0;
 }
+

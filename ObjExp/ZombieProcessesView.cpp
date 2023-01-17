@@ -45,7 +45,7 @@ CString CZombieProcessesView::GetColumnText(HWND, int row, int col) const {
 		case ColumnType::Handles: return std::format("{}", item.Handles.size()).c_str();
 		case ColumnType::ExitCode: return std::format("0x{:X}", item.ExitCode).c_str();
 		case ColumnType::CreateTime: return CTime(*(FILETIME*)&item.CreateTime).Format(L"%x %X");
-		case ColumnType::ExitTime: return CTime(*(FILETIME*)&item.ExitTime).Format(L"%x %X");
+		case ColumnType::ExitTime: return item.ExitTime == 0 ? CString(L"") : CTime(*(FILETIME*)&item.ExitTime).Format(L"%x %X");
 		case ColumnType::KernelTime: return StringHelper::TimeSpanToString(item.KernelTime);
 		case ColumnType::UserTime: return StringHelper::TimeSpanToString(item.UserTime);
 		case ColumnType::CPUTime: return StringHelper::TimeSpanToString(item.UserTime + item.KernelTime);
@@ -55,7 +55,8 @@ CString CZombieProcessesView::GetColumnText(HWND, int row, int col) const {
 			auto count = std::min((int)item.Handles.size(), 5);
 			for (auto i = 0; i < count; i++) {
 				auto& hi = item.Handles[i];
-				text += std::format(L"H: 0x{:X} PID: {} ({}) ", hi.Handle, hi.Pid, ProcessHelper::GetProcessName2(hi.Pid)).c_str();
+				text += std::format(L"H: 0x{:X} PID: {} ({}) ", hi.Handle, hi.Pid, 
+					(PCWSTR)ProcessHelper::GetProcessName2(hi.Pid)).c_str();
 			}
 			return text;
 	}
@@ -66,7 +67,7 @@ int CZombieProcessesView::GetRowImage(HWND, int row, int col) const {
 	return ImageIconCache::Get().GetIcon(m_Items[row].FullPath);
 }
 
-int CZombieProcessesView::GetSaveColumnRange(int& start) const {
+int CZombieProcessesView::GetSaveColumnRange(HWND, int& start) const {
 	return 2;
 }
 
@@ -166,7 +167,8 @@ void CZombieProcessesView::RefreshThreads() {
 	}
 	Sort(m_List);
 	m_List.SetItemCountEx((int)m_Items.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
-	GetFrame()->SetStatusText(7, std::format(L"Zombie Threads: {}", m_Items.size()).c_str());
+	if(IsActive())
+		GetFrame()->SetStatusText(7, std::format(L"Zombie Threads: {}", m_Items.size()).c_str());
 }
 
 void CZombieProcessesView::Refresh() {
@@ -175,9 +177,10 @@ void CZombieProcessesView::Refresh() {
 	UpdateUI();
 }
 
-void CZombieProcessesView::UpdateUI(bool active) {
-	if (active) {
-		GetFrame()->SetStatusText(7, std::format(L"Zombie Processes: {}", m_Items.size()).c_str());
+void CZombieProcessesView::UpdateUI(bool force) {
+	if (IsActive()) {
+		auto text = m_Processes ? std::format(L"Zombie Processes: {}", m_Items.size()) : std::format(L"Zombie Threads: {}", m_Items.size());
+		GetFrame()->SetStatusText(7, text.c_str());
 		int selected = m_List.GetSelectedCount();
 		UI().UIEnable(ID_EDIT_COPY, selected > 0);
 		UI().UIEnable(ID_VIEW_PROPERTIES, selected == 1);

@@ -112,7 +112,7 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 
 	m_view.m_bTabCloseButton = FALSE;
 	m_hWndClient = m_view.Create(m_hWnd, rcDefault, nullptr, 
-		WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_WINDOWEDGE);
+		WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0);
 	ViewFactory::Get().Init(this, m_view);
 
 	UISetCheck(ID_VIEW_STATUS_BAR, 1);
@@ -144,9 +144,7 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 
 	SetDarkMode(AppSettings::Get().DarkMode());
 
-	// register object for message filtering and idle updates
 	auto pLoop = _Module.GetMessageLoop();
-	ATLASSERT(pLoop);
 	pLoop->AddMessageFilter(this);
 	pLoop->AddIdleHandler(this);
 
@@ -294,12 +292,12 @@ void CMainFrame::SetStatusText(int index, PCWSTR text) {
 	m_StatusBar.SetText(index, text);
 }
 
-LRESULT CMainFrame::OnAllHandles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+LRESULT CMainFrame::OnAllHandles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) const {
 	ViewFactory::Get().CreateView(ViewType::AllHandles);
 	return 0;
 }
 
-LRESULT CMainFrame::OnAllObjects(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+LRESULT CMainFrame::OnAllObjects(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) const {
 	ViewFactory::Get().CreateView(ViewType::Objects);
 	return 0;
 }
@@ -323,9 +321,8 @@ LRESULT CMainFrame::OnZombieThreads(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 }
 
 LRESULT CMainFrame::OnAboutWindows(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	ThemeHelper::Suspend();
-	::ShellAbout(m_hWnd, L"Windows", nullptr, nullptr);
-	ThemeHelper::Resume();
+	std::thread([this]() { ::ShellAbout(m_hWnd, L"Windows", nullptr, nullptr); }).detach();
+
 	return 0;
 }
 
@@ -377,7 +374,6 @@ void CMainFrame::SetDarkMode(bool dark) {
 	ThemeHelper::UpdateMenuColors(*this, dark);
 	UpdateMenu(GetMenu(), true);
 	DrawMenuBar();
-
 	UISetCheck(ID_OPTIONS_DARKMODE, dark);
 }
 
